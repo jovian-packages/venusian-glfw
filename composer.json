@@ -1,0 +1,75 @@
+{
+    "name": "jovian/venusian-glfw",
+    "description": "The 'glfw' stager for Venusian Surface: staged windows on GLFW 3.4 through ext-glfw, presented through their OpenGL context, on macOS and Linux.",
+    "type": "library",
+    "keywords": [
+        "framework",
+        "venusian",
+        "surface",
+        "windows",
+        "glfw",
+        "opengl",
+        "vulkan",
+        "metal"
+    ],
+    "license": "MIT",
+    "homepage": "https://venusian.projectsaturnstudios.com/ecosystem/jovian/venusian-glfw/0.10.x",
+    "support": {
+        "issues": "https://github.com/jovian-packages/venusian-glfw/issues",
+        "source": "https://github.com/jovian-packages/venusian-glfw"
+    },
+    "authors": [
+        {
+            "name": "Angel Gonzalez",
+            "email": "angel@projectsaturnstudios.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4|^8.5|^8.6",
+        "ext-glfw": "^0.10",
+        "ext-opengl": "^0.10",
+        "venusian-surface/bridge": "^0.10.0",
+        "venusian-surface/contracts": "^0.10.0",
+        "venusian-surface/drawing": "^0.10.0",
+        "venusian-surface/windows": "^0.10.0",
+        "venusian-voyager/nuts-and-bolts": "^0.10.1"
+    },
+    "require-dev": {
+        "jovian/venusian-vulkan": "^0.10.0",
+        "pestphp/pest": "^4",
+        "venusian-voyager/vessel": "^0.10.1"
+    },
+    "suggest": {
+        "ext-appkit": "On macOS: the CGL handle of a lent GL context, the Metal layer, the safe area.",
+        "ext-metal": "On macOS with ext-appkit: lending a CAMetalLayer.",
+        "ext-vulkan": "Lending a VkSurfaceKHR."
+    },
+    "autoload": {
+        "psr-4": {
+            "Jovian\\Toolkits\\Glfw\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jovian\\Toolkits\\Glfw\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.10.x-dev"
+        },
+        "venusian": {
+            "providers": [
+                "Jovian\\Toolkits\\Glfw\\Providers\\VenusianGlfwServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
