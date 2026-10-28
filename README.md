@@ -4,7 +4,7 @@ The `glfw` stager for Venusian Surface: staged windows on GLFW 3.4 through ext-g
 
 ## Requirements
 
-- macOS or Linux with GLFW 3.4, ext-glfw ^0.10 and ext-opengl ^0.10. PHP 8.4.
+- macOS or Linux with GLFW 3.4, ext-glfw ^0.11 and ext-opengl ^0.11. PHP 8.4.
 - On macOS, ext-appkit for a lent GL context's CGL handle, the Metal layer and the safe area; ext-metal for the Metal layer.
 - ext-vulkan, and a Vulkan loader GLFW finds, for a lent Vulkan surface.
 - On the Pi, the Wayland session (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`), or X11 with `bridge.stage.glfw.platform` set to `x11`: GLFW finds Wayland's default socket even with only `DISPLAY` set.
