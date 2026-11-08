@@ -40,7 +40,7 @@
         "venusian-voyager/vessel": "^0.11.0"
     },
     "suggest": {
-        "ext-appkit": "On macOS: the CGL handle of a lent GL context, the Metal layer, the safe area.",
+        "ext-appkit": "Required on macOS (the session refuses to connect without it): a press's click count and a scroll's precision come from the current NSEvent; also the CGL handle of a lent GL context, the Metal layer, the safe area.",
         "ext-metal": "On macOS with ext-appkit: lending a CAMetalLayer.",
         "ext-vulkan": "Lending a VkSurfaceKHR."
     },

@@ -235,11 +235,11 @@ it('asks for attention, takes an icon where the platform has one, and reads its 
 
 it('closes on the close button, or asks first with confirm_close', function (): void {
     $asking = stage('asking', ['confirm_close' => true]);
-    glfwSetWindowShouldClose($asking->native(), true);
+    glfwSetWindowShouldClose($asking->native(), GLFW_TRUE);
     // GLFW calls the close callback only for the user's close; this is the callback's own path.
-    (function (): void { $this->closeRequested(); glfwSetWindowShouldClose($this->native(), false); })->call($asking);
+    (function (): void { $this->closeRequested(); glfwSetWindowShouldClose($this->native(), GLFW_FALSE); })->call($asking);
     expect($asking->isOpen())->toBeTrue()
-        ->and(glfwWindowShouldClose($asking->native()))->toBeFalse()
+        ->and(glfwWindowShouldClose($asking->native()))->toBe(GLFW_FALSE)
         ->and(takeMail())->toContainEqual(new WindowCloseRequested('asking'));
 
     $plain = stage('plain');

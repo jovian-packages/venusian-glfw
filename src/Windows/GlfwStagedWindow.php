@@ -12,6 +12,8 @@ use GLFWmonitor;
 use GLFWwindow;
 use Jovian\Toolkits\Glfw\Bridge\GlfwBridgeDriver;
 use Jovian\Toolkits\Glfw\Bridge\GlfwSession;
+use Jovian\Toolkits\Glfw\Input\CocoaEvent;
+use Jovian\Toolkits\Glfw\Input\GlfwKeyMap;
 use NSLayoutConstraint;
 use NSOpenGLContext;
 use NSRect;
@@ -22,6 +24,8 @@ use Surface\Contracts\Drawing\SurfaceKind;
 use Surface\Contracts\Drawing\VSync;
 use Surface\Contracts\Framebuffers\DamageTrackingFramebuffer;
 use Surface\Contracts\Framebuffers\Region;
+use Surface\Contracts\HumanInput\Modifiers;
+use Surface\Contracts\HumanInput\MouseButton;
 use Surface\Contracts\Windows\Display;
 use Surface\Contracts\Windows\DisplayMode;
 use Surface\Contracts\Windows\Hdr;
@@ -72,6 +76,10 @@ class GlfwStagedWindow extends StagedWindow
     protected readonly string $platform_name;
 
     protected bool $key = false;
+
+    /** The mouse button pressed first and not yet released: cursor motion is a drag while it is held. */
+    protected ?MouseButton $held = null;
+
 
     /** The mode last reported through modeChanged(). */
     protected WindowMode $native_mode = WindowMode::Windowed;
@@ -267,7 +275,7 @@ class GlfwStagedWindow extends StagedWindow
             $session->dispatched();
             $this->closeRequested();
             if ($this->open) {
-                glfwSetWindowShouldClose($w, false);
+                glfwSetWindowShouldClose($w, GLFW_FALSE);
             }
         });
         glfwSetWindowRefreshCallback($window, function (GLFWwindow $w) use ($session): void {
@@ -277,7 +285,40 @@ class GlfwStagedWindow extends StagedWindow
         glfwSetWindowFocusCallback($window, function (GLFWwindow $w, int $focused) use ($session): void {
             $session->dispatched();
             $this->key = $focused !== 0;
+            if (! $this->key) {
+                $this->held = null;
+            }
             $this->key ? $this->focused() : $this->focusLost();
+        });
+        glfwSetKeyCallback($window, function (GLFWwindow $w, int $key, int $scancode, int $action, int $mods) use ($session): void {
+            $session->dispatched();
+            $held = GlfwKeyMap::modifiers($mods);
+            $action === GLFW_RELEASE
+                ? $this->keyReleased(GlfwKeyMap::key($key), $held)
+                : $this->keyPressed(GlfwKeyMap::key($key), glfwGetKeyName($key, $scancode) ?? '', $held, $action === GLFW_REPEAT);
+        });
+        glfwSetCharCallback($window, function (GLFWwindow $w, int $codepoint) use ($session): void {
+            $session->dispatched();
+            $this->textCommitted(mb_chr($codepoint));
+        });
+        glfwSetMouseButtonCallback($window, function (GLFWwindow $w, int $button, int $action, int $mods) use ($session): void {
+            $session->dispatched();
+            $this->mouseButton($w, $button, $action === GLFW_PRESS, GlfwKeyMap::modifiers($mods));
+        });
+        glfwSetCursorPosCallback($window, function (GLFWwindow $w, float $x, float $y) use ($session): void {
+            $session->dispatched();
+            $mods = $this->heldModifiers($w);
+            $this->held === null
+                ? $this->pointerMoved($x, $y, $mods)
+                : $this->dragged($x, $y, $this->held, $mods);
+        });
+        glfwSetCursorEnterCallback($window, function (GLFWwindow $w, int $entered) use ($session): void {
+            $session->dispatched();
+            $entered === GLFW_TRUE ? $this->pointerEntered() : $this->pointerLeft();
+        });
+        glfwSetScrollCallback($window, function (GLFWwindow $w, float $dx, float $dy) use ($session): void {
+            $session->dispatched();
+            $this->wheeled($dx, $dy, $this->cocoa() && CocoaEvent::precise(), $this->heldModifiers($w));
         });
         glfwSetWindowIconifyCallback($window, function () use ($session): void {
             $session->dispatched();
@@ -291,6 +332,46 @@ class GlfwStagedWindow extends StagedWindow
             $session->dispatched();
             $this->scaleChanged($this->nativeScale());
         });
+    }
+
+    /** Whether GLFW runs on Cocoa, where the OS's own NSEvent gives a press's click count and a scroll's precision. */
+    protected function cocoa(): bool
+    {
+        return $this->platform_name === 'cocoa';
+    }
+
+    /**
+     * The modifiers held now, from GLFW's key state: it passes none with cursor motion or a scroll. That state is what
+     * GLFW has been told, so a modifier already held when the window gained focus reads released until GLFW's next event.
+     */
+    protected function heldModifiers(GLFWwindow $window): Modifiers
+    {
+        return GlfwKeyMap::held(fn (int $key): bool => glfwGetKey($window, $key) === GLFW_PRESS);
+    }
+
+    /**
+     * A button event at the cursor position GLFW reports (its button callback gives none). GLFW has no click
+     * count: on macOS it is the OS's, from the NSEvent being dispatched; elsewhere a press is one click (no source
+     * is bound). The button pressed first owns a drag.
+     */
+    protected function mouseButton(GLFWwindow $window, int $glfw, bool $down, Modifiers $mods): void
+    {
+        $button = GlfwKeyMap::button($glfw);
+        if ($button === null) {
+            return;
+        }
+        glfwGetCursorPos($window, $x, $y);
+        if ($down) {
+            $this->held ??= $button;
+            // GLFW's limit: it reports no click count, and PHP does no click timing; off macOS a press is one click.
+            $this->pressed($x, $y, $button, $this->cocoa() ? CocoaEvent::clicks() : 1, $mods);
+
+            return;
+        }
+        if ($this->held === $button) {
+            $this->held = null;
+        }
+        $this->released($x, $y, $button, $mods);
     }
 
     protected function nativeSize(): array
@@ -459,7 +540,7 @@ class GlfwStagedWindow extends StagedWindow
 
     protected function applyIcon(string $rgba8, int $width, int $height): void
     {
-        glfwSetWindowIcon($this->native(), [new GLFWimage($width, $height, $rgba8)]);
+        glfwSetWindowIcon($this->native(), 1, [new GLFWimage($width, $height, $rgba8)]);
         $this->icon = [$rgba8, $width, $height];
     }
 
@@ -678,7 +759,7 @@ class GlfwStagedWindow extends StagedWindow
         $content = NSView::fromPointer(glfwGetCocoaView($this->native()));
         $layer = CAMetalLayer::layer();
         $layer->setContentsScale($this->nativeScale());
-        $view = NSView::initWithFrame(new NSRect());
+        $view = NSView::initWithFrame(new NSRect(0, 0, 0, 0));
         $view->setLayer(CALayer::fromPointer($layer->pointer()));
         $content->addSubview($view);
         $view->setTranslatesAutoresizingMaskIntoConstraints(false);

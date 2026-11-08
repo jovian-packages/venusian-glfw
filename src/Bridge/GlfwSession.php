@@ -36,7 +36,9 @@ class GlfwSession extends BridgedToolkitSession
      */
     protected function initializeEngine(): void
     {
-        if (PHP_OS_FAMILY === 'Darwin' && class_exists(NSApplication::class)) {
+        if (PHP_OS_FAMILY === 'Darwin' && ($this->platform ?? GLFW_PLATFORM_COCOA) === GLFW_PLATFORM_COCOA) {
+            // GLFW reports neither a press's click count nor a scroll's precision: the application's current NSEvent does.
+            class_exists(NSApplication::class) || throw new BridgeException('glfw: on macOS the session needs ext-appkit (the click count and scroll precision of GLFW input are the current NSEvent\'s).');
             // The application exists before GLFW's: GLFW then joins it instead of building its own.
             NSApplication::sharedApplication();
         }
