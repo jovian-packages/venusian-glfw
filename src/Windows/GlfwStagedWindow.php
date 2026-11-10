@@ -2,6 +2,7 @@
 
 namespace Jovian\Toolkits\Glfw\Windows;
 
+use Surface\HumanInput\Keymaps\EditKeys;
 use CALayer;
 use CAMetalLayer;
 use Closure;
@@ -293,9 +294,16 @@ class GlfwStagedWindow extends StagedWindow
         glfwSetKeyCallback($window, function (GLFWwindow $w, int $key, int $scancode, int $action, int $mods) use ($session): void {
             $session->dispatched();
             $held = GlfwKeyMap::modifiers($mods);
-            $action === GLFW_RELEASE
-                ? $this->keyReleased(GlfwKeyMap::key($key), $held)
-                : $this->keyPressed(GlfwKeyMap::key($key), glfwGetKeyName($key, $scancode) ?? '', $held, $action === GLFW_REPEAT);
+            $pressed = GlfwKeyMap::key($key);
+            if ($action === GLFW_RELEASE) {
+                $this->keyReleased($pressed, $held);
+
+                return;
+            }
+            $this->keyPressed($pressed, glfwGetKeyName($key, $scancode) ?? '', $held, $action === GLFW_REPEAT);
+            // GLFW has no key bindings: the platform's standard editing keys become edit commands here.
+            $command = EditKeys::command($pressed, $held);
+            $command === null || $this->editCommanded($command);
         });
         glfwSetCharCallback($window, function (GLFWwindow $w, int $codepoint) use ($session): void {
             $session->dispatched();

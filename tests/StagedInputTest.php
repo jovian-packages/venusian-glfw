@@ -14,6 +14,8 @@ use Surface\Contracts\Windows\Mail\Staged\StagedMoved;
 use Surface\Contracts\Windows\Mail\Staged\StagedPressed;
 use Surface\Contracts\Windows\Mail\Staged\StagedReleased;
 use Surface\Contracts\Windows\Mail\Staged\StagedTextCommitted;
+use Surface\Contracts\Windows\Mail\Staged\StagedEditCommanded;
+use Surface\Contracts\Windows\Input\EditCommand;
 use Surface\Contracts\Windows\Mail\Staged\StagedWheeled;
 
 /*
@@ -97,6 +99,20 @@ it('posts keys with their layout name, modifiers, a repeat flagged, and committe
         new StagedKeyPressed('in', Key::W, $name, $shift, true),
         new StagedTextCommitted('in', 'W'),
         new StagedKeyReleased('in', Key::W, $shift),
+    ]);
+});
+
+it('posts an editing key as its edit command after the key', function (): void {
+    ['Key' => $key] = inputWindow();
+    $chord = PHP_OS_FAMILY === 'Darwin' ? GLFW_MOD_SUPER : GLFW_MOD_CONTROL;
+
+    $key(GLFW_KEY_LEFT, 0, GLFW_PRESS, 0);
+    $key(GLFW_KEY_V, 0, GLFW_PRESS, $chord);
+
+    $edits = array_values(array_filter(inputMail(), fn (object $mail): bool => $mail instanceof StagedEditCommanded));
+    expect($edits)->toEqual([
+        new StagedEditCommanded('in', EditCommand::MoveLeft),
+        new StagedEditCommanded('in', EditCommand::Paste),
     ]);
 });
 
