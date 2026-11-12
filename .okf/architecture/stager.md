@@ -5,7 +5,7 @@ description: GlfwBridgeDriver, GlfwSession polled at the loop's pace, GlfwStaged
 resource: src/Windows/GlfwStagedWindow.php
 tags: [glfw, staged-windows, bridge, opengl]
 status: draft
-generated: { by: claude-opus/5.5, at: 2026-10-08T18:00:00Z }
+generated: { by: claude-fable/5.2, at: 2026-11-11T14:48:28Z }
 sources:
   - id: window
     resource: src/Windows/GlfwStagedWindow.php
@@ -44,6 +44,8 @@ Hints: hidden, resizable, decorated, floating, transparent framebuffer, scaled f
 # Displays
 
 `GlfwDisplays`: id = `GLFWmonitor` address; bounds from monitor position and current mode; usable from the work area; scale and pixel density from the content scale; modes deduplicated by size and refresh; desktop = held pre-exclusive mode, else current; no HDR.[^displays]
+
+The CPU present's texture and read framebuffer are made and deleted with ext-opengl's 1:1 calls (`glGenTextures(1, $made)`, `glDeleteTextures(1, [...])`, and the framebuffer pair). Key handling reads `Surface\HumanInput\Keymaps\EditKeys`: `venusian-surface/human-input` is required.
 
 [^session]: GlfwSession
 [^window]: GlfwStagedWindow

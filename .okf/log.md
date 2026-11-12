@@ -1,5 +1,9 @@
 # Log
 
+## 2026-11-11
+
+* **Fix**: the CPU present (a Velvet frame) threw `glGenTextures() expects exactly 2 arguments`: its four gen/delete calls still had ext-opengl's pre-1:1 shape. `composer.json` now requires `venusian-surface/human-input` (`EditKeys`). [Stager](architecture/stager.md). Suite: 40 passed, 2 skipped (9 failed before).
+
 ## 2026-10-28
 
 * **Version**: 0.11.0 with the Venusian 0.11 ecosystem: `dev-main` → `0.11.x-dev`, its extensions, `venusian-surface/*`, `venusian-voyager/*` and the jovian siblings at `^0.11.0`, PHP `~8.4.27||^8.5.12`, homepage `0.11.x`. No API change. 17 passed, 2 skipped, 2 failed on Homebrew PHP 8.4 NTS and ZTS; 19 passed, 2 skipped on the Pi (8.4 ZTS).

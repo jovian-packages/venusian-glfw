@@ -31,6 +31,7 @@
         "venusian-surface/bridge": "^0.11.0",
         "venusian-surface/contracts": "^0.11.0",
         "venusian-surface/drawing": "^0.11.0",
+        "venusian-surface/human-input": "^0.11.0",
         "venusian-surface/windows": "^0.11.0",
         "venusian-voyager/nuts-and-bolts": "^0.11.0"
     },

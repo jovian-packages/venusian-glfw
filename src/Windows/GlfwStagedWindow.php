@@ -639,15 +639,18 @@ class GlfwStagedWindow extends StagedWindow
     protected function makeTexture(int $width, int $height): void
     {
         if (! is_null($this->texture)) {
-            glDeleteFramebuffers([$this->read_framebuffer]);
-            glDeleteTextures([$this->texture]);
+            glDeleteFramebuffers(1, [$this->read_framebuffer]);
+            glDeleteTextures(1, [$this->texture]);
         }
-        [$this->texture] = glGenTextures(1);
+        $made = null;
+        glGenTextures(1, $made);
+        $this->texture = $made[0];
         glBindTexture(GL_TEXTURE_2D, $this->texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, $width, $height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-        [$this->read_framebuffer] = glGenFramebuffers(1);
+        glGenFramebuffers(1, $made);
+        $this->read_framebuffer = $made[0];
         glBindFramebuffer(GL_FRAMEBUFFER, $this->read_framebuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, $this->texture, 0);
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) !== GL_FRAMEBUFFER_COMPLETE) {
